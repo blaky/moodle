@@ -49,6 +49,32 @@ class assign_feedback_editpdf extends assign_feedback_plugin {
     }
 
     /**
+     * Get the html widget for qucik grading if there is a file submitted.
+     *
+     * @param int $userid The user id in the table this quickgrading element relates to
+     * @param mixed $grade grade or null - The grade data.
+     *                     May be null if there are no grades for this user (yet)
+     * @return string
+     */
+    public function get_quickgrading_html($userid, $grade) {
+        global $PAGE, $DB;
+
+        // Fetch submission status.
+        $submissionstatus = $DB->get_field('assign_submission', 'status',
+                array('userid' => $userid, 'assignment' => $grade->assignment
+                ));
+
+        // Make sure there is a file submitted.
+        if ($submissionstatus && $submissionstatus != 'new') {
+            $renderer = $PAGE->get_renderer('assignfeedback_editpdf');
+            $widget = $this->get_widget($userid, $grade, false);
+            return $renderer->render($widget);
+        } else {
+            return get_string('submissionstatus_new', 'mod_assign');
+        }
+    }
+
+    /**
      * Create a widget for rendering the editor.
      *
      * @param int $userid
@@ -205,6 +231,15 @@ class assign_feedback_editpdf extends assign_feedback_plugin {
             document_services::generate_feedback_document($this->assignment, $grade->userid, $grade->attemptnumber);
         }
 
+        return true;
+    }
+
+    /**
+     * Support quick grading.
+     *
+     * @return boolean - True if the plugin supports quickgrading
+     */
+    public function supports_quickgrading() {
         return true;
     }
 
