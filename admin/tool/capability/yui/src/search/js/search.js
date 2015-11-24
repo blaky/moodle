@@ -143,6 +143,64 @@ Y.extend(SEARCH, Y.Base, SEARCH.prototype, {
 
 M.tool_capability = M.tool_capability || {};
 
+M.tool_capability.scroll_header = function() {
+    Y.on('scroll', function() {
+        var main_table = Y.one('table.comparisontable');
+        var parent = main_table.ancestor();
+        var scroll = window.scrollY;
+        var anchor_top = main_table.get('offsetTop');
+        var anchor_bottom = main_table.one("tr.lastrow").get('offsetTop');
+        var clone_table = Y.one('#clone');
+        var background = Y.one('body').getComputedStyle(
+                'background-color');
+
+        if (scroll > anchor_top && scroll < anchor_bottom) {
+            if (!clone_table) {
+
+                // Find static navbar height.
+                var navbar_height = 0;
+                Y.all('header').each(function(node){
+                    if (node.getComputedStyle('position') == 'fixed') {
+                        navbar_height = node.getComputedStyle('height');
+                    }
+                });
+
+                // Create clone table.
+                clone_table = main_table.cloneNode(true);
+                clone_table.setAttribute('id', 'clone');
+                clone_table.setStyles({
+                    position : 'fixed',
+                    'margin-top' : navbar_height,
+                    'pointer-events' : 'none',
+                    top : 0
+                });
+
+                clone_table.one('thead tr').setStyle('height', '120');
+                clone_table.setStyle('width', main_table.getComputedStyle('width'));
+                parent.append(clone_table);
+                clone_table.setStyle('visibility', 'hidden');
+                clone_table.one('thead').setStyles({
+                    visibility : 'visible',
+                    'background-color' : background,
+                    'pointer-events' : 'auto',
+                    outline : '1px solid ' + background
+                });
+            }
+
+        } else if (clone_table) {
+            clone_table.remove();
+            clone_table = null;
+        }
+
+        if (clone_table) {
+            clone_table.setStyle(
+                    'left',
+                    main_table.getDOMNode().getBoundingClientRect().left
+            );
+        }
+    });
+};
+
 /**
  * Initialises capability search functionality.
  * @static
@@ -151,4 +209,5 @@ M.tool_capability = M.tool_capability || {};
  */
 M.tool_capability.init_capability_search = function(options) {
     new SEARCH(options);
+    M.tool_capability.scroll_header();
 };
